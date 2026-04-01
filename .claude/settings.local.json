@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(pnpm rebuild:*)",
+      "Bash(pnpm add:*)",
+      "Bash(node --check src/index.js)",
+      "Bash(pnpm exec:*)",
+      "Bash(find D:/前端代码路径 -maxdepth 3 -type f \\\\\\(-name vite.config.* -o -name webpack.config.* -o -name tsconfig.json \\\\\\))",
+      "Bash(xargs grep:*)",
+      "Bash(find D:/前端代码路径/apps/server -type f \\\\\\(-name *.ts -o -name *.js \\\\\\))",
+      "Bash(grep -r \"ws\\\\|websocket\\\\|/ws\" D:/前端代码路径/apps/server --include=*.ts --include=*.js)",
+      "Bash(xargs ls:*)",
+      "Bash(xargs cat:*)",
+      "Bash(find D:/work-code/node-pty -maxdepth 3 -type f \\\\\\(-name *.ts -o -name *.js \\\\\\))",
+      "Bash(grep -r \"ws\\\\|websocket\\\\|3000\\\\|/ws\" D:/work-code/node-pty --include=*.ts --include=*.js)",
+      "Bash(find D:/前端代码路径/apps/web/src/router -type f -name *.ts)",
+      "Bash(find /d/前端代码路径/apps/web/src/views -maxdepth 4 -name *.vue -type f)",
+      "Bash(grep -E \"\\\\.\\(java|xml\\)$\")",
+      "Bash(ls /d/work-code/后端代码路径/server/script/*.sql)"
+    ]
+  }
+}

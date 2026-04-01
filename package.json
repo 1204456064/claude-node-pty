@@ -1,0 +1,21 @@
+{
+  "name": "node-pty-server",
+  "version": "1.0.0",
+  "description": "Node.js backend service with node-pty integration",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "terminal": "node src/terminal.js",
+    "api": "node src/api-server.js"
+  },
+  "keywords": ["node-pty", "terminal", "websocket"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0",
+    "node-pty": "^1.0.0"
+  }
+}

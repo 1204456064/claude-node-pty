@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal Control Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .header {
+      background: #2d3748;
+      color: white;
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 24px; }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: #48bb78;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .content { padding: 30px; }
+    .input-section {
+      margin-bottom: 30px;
+    }
+    .input-group {
+      display: flex;
+      gap: 10px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: 'Consolas', monospace;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button {
+      padding: 12px 24px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover { background: #5568d3; }
+    button:active { transform: scale(0.98); }
+    button.secondary {
+      background: #718096;
+    }
+    button.secondary:hover { background: #4a5568; }
+    .output-section {
+      background: #1a202c;
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 400px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .output {
+      color: #e2e8f0;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .quick-commands {
+      margin-bottom: 20px;
+    }
+    .quick-commands h3 {
+      margin-bottom: 10px;
+      color: #2d3748;
+    }
+    .quick-btn {
+      padding: 8px 16px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .quick-btn:hover {
+      background: #edf2f7;
+      border-color: #cbd5e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🖥️ Terminal Control Panel</h1>
+      <div class="status">
+        <div class="status-dot"></div>
+        <span>Running</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="quick-commands">
+        <h3>快捷命令</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="quick-btn" onclick="executeQuick('claude')">claude</button>
+          <button class="quick-btn" onclick="executeQuick('dir')">dir</button>
+          <button class="quick-btn" onclick="executeQuick('ls')">ls</button>
+          <button class="quick-btn" onclick="executeQuick('pwd')">pwd</button>
+          <button class="quick-btn" onclick="executeQuick('clear')">clear</button>
+        </div>
+      </div>
+
+      <div class="input-section">
+        <div class="input-group">
+          <input type="text" id="commandInput" placeholder="输入命令..." />
+          <button onclick="executeCommand()">执行</button>
+        </div>
+      </div>
+
+      <div class="output-section">
+        <div class="output" id="output">等待输出...</div>
+      </div>
+
+      <div class="controls">
+        <button onclick="refreshOutput()">刷新输出</button>
+        <button class="secondary" onclick="clearOutput()">清空输出</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const commandInput = document.getElementById('commandInput');
+    const output = document.getElementById('output');
+
+    // 移除 ANSI 转义序列
+    function stripAnsi(str) {
+      return str
+        // 移除 CSI 序列 (包括 [?2026h, [?2026l 等)
+        .replace(/\x1B\[[?!>]?[0-9;]*[a-zA-Z]/g, '')
+        // 移除 OSC 序列
+        .replace(/\x1B\][0-9];.*?(\x07|\x1B\\)/g, '')
+        // 移除其他转义序列
+        .replace(/\x1B[=>]/g, '')
+        .replace(/\x1B[@-_]/g, '')
+        // 移除控制字符（保留换行和制表符）
+        .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '')
+        // 清理多余的空白
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n');
+    }
+
+    // 执行命令
+    async function executeCommand() {
+      const command = commandInput.value.trim();
+      if (!command) return;
+
+      try {
+        const response = await fetch('/api/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          commandInput.value = '';
+          // 等待一下让命令执行
+          setTimeout(refreshOutput, 500);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('执行命令失败');
+      }
+    }
+
+    // 快捷命令
+    function executeQuick(command) {
+      commandInput.value = command;
+      executeCommand();
+    }
+
+    // 刷新输出
+    async function refreshOutput() {
+      try {
+        const response = await fetch('/api/output?lines=100');
+        const result = await response.json();
+        const cleanOutput = stripAnsi(result.output || '暂无输出');
+        output.textContent = cleanOutput;
+        // 自动滚动到底部
+        output.parentElement.scrollTop = output.parentElement.scrollHeight;
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    // 清空输出
+    async function clearOutput() {
+      try {
+        await fetch('/api/clear', { method: 'POST' });
+        output.textContent = '输出已清空';
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    // 回车执行
+    commandInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') executeCommand();
+    });
+
+    // 自动刷新输出
+    setInterval(refreshOutput, 2000);
+
+    // 初始加载
+    refreshOutput();
+  </script>
+</body>
+</html>
+
+
